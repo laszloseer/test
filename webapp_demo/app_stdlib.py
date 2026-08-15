@@ -6,6 +6,7 @@
 # fogadja a HTTP kérést, eldönti melyik útvonalról van szó, adatot olvas/ír.
 
 import json
+import os
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 from models import Feladat
@@ -13,6 +14,8 @@ from utils import validald_cimet
 
 feladatok = []
 kovetkezo_id = 1
+
+STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -25,9 +28,21 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def _html_valasz(self, fajlnev):
+        # A böngészőnek szánt HTML felületet szolgáljuk ki a static/ mappából.
+        with open(os.path.join(STATIC_DIR, fajlnev), "rb") as f:
+            body = f.read()
+        self.send_response(200)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
     def do_GET(self):
-        # Adatok KIADÁSA
-        if self.path == "/feladatok":
+        if self.path == "/":
+            self._html_valasz("index.html")
+        elif self.path == "/feladatok":
+            # Adatok KIADÁSA
             self._json_valasz(200, [f.to_dict() for f in feladatok])
         else:
             self._json_valasz(404, {"hiba": "Nincs ilyen útvonal"})

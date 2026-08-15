@@ -1,0 +1,59 @@
+<!--
+  Ez a fájl a webes FELÜLET (frontend): amit a felhasználó ténylegesen lát
+  a böngészőben. A benne lévő JavaScript hívja meg a korábban megírt
+  /feladatok API-t (GET a listázáshoz, POST az új feladat beküldéséhez).
+-->
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <title>Feladatlista demó</title>
+  <style>
+    body { font-family: sans-serif; max-width: 480px; margin: 40px auto; }
+    h1 { font-size: 1.4rem; }
+    li { margin: 6px 0; }
+    form { margin-top: 20px; display: flex; gap: 8px; }
+    input { flex: 1; padding: 6px; }
+    button { padding: 6px 12px; }
+  </style>
+</head>
+<body>
+  <h1>Feladatlista (minimalista webapp demó)</h1>
+  <ul id="lista"></ul>
+
+  <form id="uj-feladat-form">
+    <input id="cim-input" type="text" placeholder="Új feladat címe" required>
+    <button type="submit">Hozzáadás</button>
+  </form>
+
+  <script>
+    // Ez a JS-kód köti össze a felületet a szerver oldali API-val.
+
+    async function feladatokLekerese() {
+      const valasz = await fetch("/feladatok");
+      const feladatok = await valasz.json();
+      const lista = document.getElementById("lista");
+      lista.innerHTML = "";
+      feladatok.forEach(f => {
+        const li = document.createElement("li");
+        li.textContent = `#${f.id} — ${f.cim}`;
+        lista.appendChild(li);
+      });
+    }
+
+    document.getElementById("uj-feladat-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const input = document.getElementById("cim-input");
+      await fetch("/feladatok", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cim: input.value })
+      });
+      input.value = "";
+      feladatokLekerese(); // frissítjük a listát a beküldés után
+    });
+
+    feladatokLekerese(); // az oldal betöltésekor rögtön lekérjük a listát
+  </script>
+</body>
+</html>
